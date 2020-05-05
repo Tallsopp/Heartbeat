@@ -1,0 +1,280 @@
+﻿<Page x:Class="HeartbeatApp.Pages.Diary"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:HeartbeatApp.Pages"
+        mc:Ignorable="d"
+        Title="Diary"
+      Width="600">
+
+    <Page.Resources>
+        <Storyboard x:Key="MenuOpen">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(FrameworkElement.Width)" Storyboard.TargetName="GridMenu">
+                <EasingDoubleKeyFrame KeyTime="0" Value="80"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="160"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+        <Storyboard x:Key="MenuClose">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(FrameworkElement.Width)" Storyboard.TargetName="GridMenu">
+                <EasingDoubleKeyFrame KeyTime="0" Value="160"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="80"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+    </Page.Resources>
+
+    <Page.Triggers>
+        <EventTrigger RoutedEvent="ButtonBase.Click" SourceName="SideMenuOpen">
+            <BeginStoryboard Storyboard="{StaticResource MenuOpen}"/>
+        </EventTrigger>
+        <EventTrigger RoutedEvent="ButtonBase.Click" SourceName="SideMenuClose">
+            <BeginStoryboard Storyboard="{StaticResource MenuClose}"/>
+        </EventTrigger>
+
+    </Page.Triggers>
+
+    <DockPanel>
+    <ScrollViewer>
+        <Grid x:Name="gridApp" Background="White">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Grid Grid.Row="0" Style="{StaticResource HeaderOrFooter}">
+                <Button x:Name="SideMenuOpen" Click="MenuOpen" Width="40" Height="40" Style="{StaticResource Menu}"/>
+                <Button x:Name="SideMenuClose" Click="MenuClose" Width="50" Height="50" Style="{StaticResource Menu}" Visibility="Collapsed"/>
+                <TextBlock Text="DIARY"/>
+            </Grid>
+
+                <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                    <!-- Side Menu -->
+                    <Grid Name="GridMenu" Width="80" Style="{StaticResource SideMenu}">
+                        <StackPanel HorizontalAlignment="Stretch">
+                            <ListView ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListViewItem Height="60">
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- HOME -->
+                                        <Button Style="{StaticResource Home}" VerticalAlignment="Center" Margin="10" Click="NavigateHome_Click"/>
+                                        <TextBlock Text="Home"/>
+                                    </StackPanel>
+                                </ListViewItem>
+
+                                <ListViewItem Height="60">
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- DIARY -->
+                                        <Button Style="{StaticResource Diary}" VerticalAlignment="Center" Margin="10" Click="NavigateDiary_Click"/>
+                                        <TextBlock Text="Diary"/>
+                                    </StackPanel>
+                                </ListViewItem>
+                            </ListView>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Main App Page -->
+                <StackPanel Grid.Column="1">
+                    <StackPanel Name="Calender" Margin=" 0 20 0 20"
+                        Orientation="Horizontal" HorizontalAlignment="Center" Height="50">
+
+                        <!-- Date Selection / Go Left or Right to Change Dates or Datepicker-->
+                        <Button Margin="0 0 20 0" Style="{StaticResource Date}"/>
+                        <DatePicker Name="DiaryDate"/>
+                        <Button FlowDirection="RightToLeft" Margin="20 0 0 0" Style="{StaticResource Date}"/>
+                    </StackPanel>
+
+                    <!-- Daily Goals Reminders for Calroies and Targets to Reach -->
+                    <StackPanel Name="DailyGoals" Style="{StaticResource StackGoals}" HorizontalAlignment="Stretch" Margin="0 20 0 20" Height="200" Width="400">
+                        <TextBlock Name="StartingWeight" Text="Starting Weight: 66kg"/>
+                        <TextBlock Name="TargetWeight" Text="Target Weight: 60kg" />
+                        <TextBlock Name="RemainingCalories" Text="Calorie Budget: 1,650kcals"/>
+                    </StackPanel>
+
+                    <!-- Food Buttons for Daily Nutrition -->
+                    <StackPanel Name="MealButtons" Style="{StaticResource MealButtons}" Orientation="Horizontal" HorizontalAlignment="Stretch">
+                        <Button Click="OpenBreakfast" Margin="10 0" Name="Breakfast" Style="{StaticResource breakfastIcon}"/>
+                        <Button Click="OpenLunch" Margin="10 0" Name="Lunch" Style="{StaticResource lunchIcon}"/>
+                        <Button Click="OpenDinner" Margin="10 0" Name="Dinner" Style="{StaticResource dinnerIcon}"/>
+                        <Button Click="OpenSnacks" Margin="10 0" Name="Snacks" Style="{StaticResource snacksIcon}"/>
+                        <Button Click="OpenWater" Margin="10 0" Name="Water" Style="{StaticResource waterIcon}"/>
+                    </StackPanel>
+
+                    <!-- Items of Food per Meal -->
+                    <StackPanel Style="{StaticResource MealPlanner}" Name="Meals" Height="auto" Margin="0 20 0 20" HorizontalAlignment="Stretch">
+                        <!-- Breakfast -->
+                        <StackPanel Name="panelBreakfast" Visibility="Collapsed">
+                            <TextBlock Text="Breakfast"/>
+                            <StackPanel Visibility="Collapsed"/>
+                            <StackPanel Visibility="Collapsed" Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Margin="0 0 50 0" Content="Update" Click="UpdateDiary"/>
+                                <Button Content="Back" Click="CancelItem"/>
+                            </StackPanel>
+
+                            <Button Content="+ Add Food" Click="GridControls" />
+                        </StackPanel>
+
+                        <!-- Lunch -->
+                        <StackPanel Name="panelLunch" Visibility="Collapsed">
+                            <TextBlock Text="Lunch"/>
+                            <StackPanel Visibility="Collapsed"/>
+                            <StackPanel Visibility="Collapsed" Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Margin="0 0 50 0" Content="Update" Click="UpdateDiary"/>
+                                <Button Content="Back" Click="CancelItem"/>
+                            </StackPanel>
+
+                            <Button Content="+ Add Food" Click="GridControls" />
+                        </StackPanel>
+
+                        <!-- Dinner -->
+                        <StackPanel Name="panelDinner" Visibility="Collapsed">
+                            <TextBlock Text="Dinner"/>
+                            <StackPanel Visibility="Collapsed"/>
+                            <StackPanel Visibility="Collapsed" Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Margin="0 0 50 0" Content="Update" Click="UpdateDiary"/>
+                                <Button Content="Back" Click="CancelItem"/>
+                            </StackPanel>
+
+                            <Button Content="+ Add Food" Click="GridControls" />
+                        </StackPanel>
+
+                        <!-- Snacks -->
+                        <StackPanel Name="panelSnacks" Visibility="Collapsed">
+                            <TextBlock Text="Snacks"/>
+                            <StackPanel Visibility="Collapsed"/>
+                            <StackPanel Visibility="Collapsed" Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Margin="0 0 50 0" Content="Update" Click="UpdateDiary"/>
+                                <Button Content="Back" Click="CancelItem"/>
+                            </StackPanel>
+
+                            <Button Content="+ Add Food" Click="GridControls" />
+                        </StackPanel>
+
+                        <!-- Water -->
+                        <StackPanel Name="panelWater" Visibility="Collapsed">
+                            <TextBlock Text="Water"/>
+                            <StackPanel Visibility="Collapsed"/>
+                            <StackPanel Visibility="Collapsed" Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Margin="0 0 50 0" Content="Update" Click="UpdateDiary"/>
+                                <Button Content="Back" Click="CancelItem"/>
+                            </StackPanel>
+
+                            <Button Content="+ Add Food" Click="GridControls" />
+                        </StackPanel>
+
+                    </StackPanel>
+
+                    <!-- Displays Calories Eaten per Day -->
+                    <StackPanel Name="Charts" HorizontalAlignment="Stretch">
+
+                    </StackPanel>
+
+                    <!-- Nutrition Breakdown -->
+                    <StackPanel HorizontalAlignment="Stretch">
+                        <!-- Nutrition Area -->
+                        <Grid Margin="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="15"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Headers-->
+                            <StackPanel Grid.Column="0" Orientation="Vertical"
+                            Style="{StaticResource TotalHeaders}">
+                                <TextBlock Padding="2" Text="Total:"/>
+                                <TextBlock Padding="2" Text="Daily Goal:"/>
+                                <TextBlock Padding="2" Text="Remaining:"/>
+                            </StackPanel>
+
+                            <!-- Values-->
+                            <StackPanel Grid.Column="2" Orientation="Vertical">
+                                <!-- Totals -->
+                                <StackPanel Orientation="Horizontal" Style="{StaticResource Totals}">
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                </StackPanel>
+
+                                <!-- Daily Goals -->
+                                <StackPanel Orientation="Horizontal"  Style="{StaticResource Totals}">
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                </StackPanel>
+
+                                <!-- Remaining -->
+                                <StackPanel Orientation="Horizontal"  Style="{StaticResource Totals}">
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                    <TextBlock Width="70" Padding="2" Text="0"/>
+                                </StackPanel>
+
+                                <!-- Total Headers-->
+                                <StackPanel Orientation="Horizontal"
+                                Style="{StaticResource TotalHeaders}">
+                                    <StackPanel Width="70">
+                                        <TextBlock Padding="2" Text="Calories"/>
+                                        <TextBlock Padding="2" Text="kcal"/>
+                                    </StackPanel>
+
+                                    <StackPanel Width="70">
+                                        <TextBlock Padding="2" Text="Carbs"/>
+                                        <TextBlock Padding="2" Text="g"/>
+                                    </StackPanel>
+
+                                    <StackPanel Width="70">
+                                        <TextBlock Padding="2" Text="Fat"/>
+                                        <TextBlock Padding="2" Text="g"/>
+                                    </StackPanel>
+
+                                    <StackPanel Width="70">
+                                        <TextBlock Padding="2" Text="Protein"/>
+                                        <TextBlock Padding="2" Text="g"/>
+                                    </StackPanel>
+
+                                    <StackPanel Width="70">
+                                        <TextBlock Padding="2" Text="Sodium"/>
+                                        <TextBlock Padding="2" Text="mg"/>
+                                    </StackPanel>
+
+                                    <StackPanel Width="70">
+                                        <TextBlock Padding="2" Text="Sugar"/>
+                                        <TextBlock Padding="2" Text="g"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+
+                </StackPanel>
+            </Grid>
+
+                <!-- Footer -->
+            <Grid Style="{StaticResource HeaderOrFooter}" Grid.Row="2">
+                <TextBlock Text="HEARTBEAT"/>
+            </Grid>
+
+        </Grid>
+    </ScrollViewer>
+    </DockPanel>
+
+</Page>
