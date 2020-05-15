@@ -5,28 +5,32 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:HeartbeatApp.Pages"
         mc:Ignorable="d"      
-        Title="SignIn" Height="1000" Width="600">
+        Title="SignIn">
 
-    <Grid>
+    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        
         <!-- Main Page -->
-        <Grid x:Name="MainGrid" Style="{StaticResource SignInScreen}" Visibility="Visible">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Grid x:Name="MainGrid" Visibility="Visible">
+            <Border CornerRadius="10" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <Border.Background>
+                    <LinearGradientBrush>
+                        <GradientStop Color="White" Offset="0.0"/>
+                        <GradientStop Color="#f48115" Offset="1.0"/>
+                    </LinearGradientBrush>
+                </Border.Background>
 
-                <Image Source="C:\Users\NTI\source\repos\HeartbeatApp\HeartbeatApp/Assets/Buttons/App Buttons/Icon_SignIn.png" Width="400" />
+            </Border>
+
+            <StackPanel HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="50">
+
+                <Image Source="C:\Users\NTI\source\repos\HeartbeatApp\HeartbeatApp/Assets/Buttons/App Buttons/Icon_SignIn.png"
+                       Width="300"/>
 
                 <!-- Register Button -->
-                <Button Click="LoadSignUp"
-                        Width="200"
-                        Height="100"
-                Margin="0 10 0 10"
-                VerticalAlignment="Bottom" HorizontalAlignment="Center" FontSize="20"
-                Content="Register">
-                </Button>
+                <Button Click="LoadSignUp" Content="Register" Width="100" Height="50" Margin="0 10 0 0"/>
 
                 <!-- Login Button -->
-                <Button Click="LoadLogIn"
-                        Width="200"
-                        Height="100"
+                <Button Click="LoadLogIn" Width="100" Height="50" Margin=" 0 10 0 10"
                 VerticalAlignment="Top" HorizontalAlignment="Center" FontSize="20"
                 Content="Login">
                 </Button>
@@ -57,11 +61,11 @@
             </StackPanel>
 
             <StackPanel Grid.Row="1" HorizontalAlignment="Center">
-                
+
                 <!-- Username -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <TextBox 
-                        Foreground="#f48115"
+                        Foreground="Black"
                         VerticalContentAlignment="Center"
                            x:Name="txtUsername"
                            Text="Username / Email"
@@ -70,14 +74,14 @@
                         MouseEnter="TxtUsername_MouseEnter"
                         MouseLeave="TxtUsername_MouseLeave">
                     </TextBox>
-                    
+
                 </StackPanel>
                 <Border Style="{StaticResource SubBorder}"/>
 
                 <!-- Password -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <TextBox 
-                        Foreground="#f48115"
+                        Foreground="Black"
                         VerticalContentAlignment="Center"
                            x:Name="txtPassword"
                            Text="Password"
@@ -87,19 +91,15 @@
                         MouseLeave="TxtUsername_MouseLeave">
                     </TextBox>
                 </StackPanel>
-                
+
                 <Border Style="{StaticResource SubBorder}"/>
 
                 <StackPanel Orientation="Vertical" Margin="0, 40" HorizontalAlignment="Center">
                     <Button
-                        x:Name="btnLogin"
-                        Width="200" Height="100"
-                        Content="Login"
-                        Click="Login_Click"
+                        x:Name="btnLogin" Width="200" Height="50" Content="Login" Click="Login_Click"
                         />
-                    <Button Margin="0, 10" Content="Back" Click="LoadStart"
-                            Width="200" Height="100"/>
-                    
+                    <Button Margin="0, 10" Content="Back" Click="LoadStart" Width="200" Height="50"/>
+
                 </StackPanel>
             </StackPanel>
 
@@ -123,61 +123,57 @@
             </Border>
 
             <!-- Title -->
-            <StackPanel VerticalAlignment="Center">
-                <Image Source="/Assets/Text/Title.png" />
+            <StackPanel Grid.Row="0" VerticalAlignment="Center">
+                <Image Source="C:\Users\NTI\source\repos\HeartbeatApp\HeartbeatApp/Assets/Text/Title.png" />
             </StackPanel>
 
+            <!-- Value Holders -->
             <StackPanel Grid.Row="1">
-                <!-- Username -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBox 
-                           x:Name="txtClientName"
-                           Text="Username / Email"/>
+
+                <!-- Name -->
+                <StackPanel>
+                    <TextBox x:Name="txtFirst" Text="First Name" Foreground="Black"/>
                 </StackPanel>
-                <Border Style="{StaticResource SubBorder}"/>
+
+                <StackPanel>
+                    <TextBox x:Name="txtLast" Text="Last Name" Foreground="Black"/>
+                </StackPanel>
+
+
+                <StackPanel>
+                    <TextBox x:Name="txtUser" Text="Username" Foreground="Black"/>
+                </StackPanel>
 
                 <!-- Set Password -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <TextBox 
                            x:Name="txtPassCode"
-                           Text="Password"/>
+                           Text="Password" Foreground="Black"/>
                 </StackPanel>
-                <Border Style="{StaticResource SubBorder}"/>
+
+                <!-- Set EmailAddress -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBox 
+                           x:Name="txtEmail"
+                           Text="Email" Foreground="Black"/>
+                </StackPanel>
 
                 <!-- Set Age -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <DatePicker 
                            x:Name="BirthDate"
                            FontSize="20"
-                           HorizontalAlignment="Center"
                            Background="Transparent"
                            Width="200"
                            Opacity="0.5"
                            Margin="100,0"/>
                 </StackPanel>
-                <Border Style="{StaticResource SubBorder}"/>
-
-                <!-- Set Height -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBox 
-                           x:Name="txtHeight"
-                        Text="Height"/>
-                </StackPanel>
-                <Border Style="{StaticResource SubBorder}"/>
-
-                <!-- Set Weight -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBox 
-                           x:Name="txtWeight"
-                        Text="Weight"/>
-                </StackPanel>
-                <Border Style="{StaticResource SubBorder}"/>
 
                 <StackPanel Orientation="Vertical" Margin="0, 40" HorizontalAlignment="Center">
                     <Button x:Name="btnRegister" Content="Register" Click="RegisterNewClient"
-                            Width="200" Height="100"/>
+                            Width="200" Height="50" Foreground="Black"/>
                     <Button Margin="0, 10" Content="Back" Click="LoadStart"
-                            Width="200" Height="100"/>
+                            Width="200" Height="50" Foreground="Black"/>
 
                 </StackPanel>
             </StackPanel>

@@ -6,7 +6,8 @@ using System.Windows.Input;
 using System.Data;
 using System.Data.SqlClient;
 using HeartbeatApp.Classes;
-
+using System.CodeDom;
+using System.Windows.Navigation;
 
 namespace HeartbeatApp.Pages
 {
@@ -22,88 +23,113 @@ namespace HeartbeatApp.Pages
             RegisterClient = 2
         }
 
+        User u = new User();
+
         public SignIn()
         {
             InitializeComponent();
             LoadScreen(Process.None);
         }
 
+        // Login to the App and connect to the server
         private void Login_Click(object sender, RoutedEventArgs e)
         {
             string tempUsername = txtUsername.Text;
             string tempPassword = txtPassword.Text;
-            using (Database.con)
+
+            try
             {
-                Database.openConnection();
-                Database.sql =
-                    "Select * from ClientAuthenticate CA where CA.Username like '" + tempUsername + "' and CA.Password like '" + tempPassword + "'";
-                Database.cmd.CommandType = CommandType.Text;
-                Database.cmd.CommandText = Database.sql;
-
-                Database.dr = Database.cmd.ExecuteReader();
-
-                if (Database.dr.HasRows)
+                using (Database.con)
                 {
-                    while (Database.dr.Read())
+                    Database.openConnection();
+                    Database.sql =
+                        "Select * from ClientAuthenticate CA where CA.Username like '" + tempUsername + "' and CA.Password like '" + tempPassword + "'";
+                    Database.cmd.CommandType = CommandType.Text;
+                    Database.cmd.CommandText = Database.sql;
+
+                    Database.dr = Database.cmd.ExecuteReader();
+
+                    if (Database.dr.HasRows)
                     {
-                        string name = Database.dr["Username"].ToString();
-                        int id = Database.dr.GetInt32(2);
-
-                        if (name == tempUsername)
+                        while (Database.dr.Read())
                         {
-                            User u = new User() { userName = name, clientID = id};
-                            MessageBox.Show("Login Successful", "Logged In", MessageBoxButton.OK, MessageBoxImage.Information);
+                            string name = Database.dr["Username"].ToString();
+                            int id = Database.dr.GetInt32(2);
 
-                            ContinueForward(u);
-                        }
-                        else
-                        {
-                            MessageBox.Show("Username or Password is not Recognised", "Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                            if (name == tempUsername)
+                            {
+                                u.LogIn(tempUsername, tempPassword);
+
+                                Database.dr.Close();
+                                Database.closeConnection();
+
+                                ContinueForward();
+                            }
+                            else
+                            {
+                                MessageBox.Show("Username or Password is not Recognised", "Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                            }
                         }
                     }
-                }
-                else
-                    MessageBox.Show("Username or Password is not Recognised", "Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    else
+                        MessageBox.Show("Username or Password is not Recognised", "Failed", MessageBoxButton.OK, MessageBoxImage.Error);
 
-                Database.dr.Close();
-                Database.closeConnection();
+                    Database.dr.Close();
+                    Database.closeConnection();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Could not connect to the SQL Server! :" + ex.Message);
             }
         }
 
+        // Register a new profile and insert into the server
         private void RegisterNewClient(object sender, RoutedEventArgs e)
         {
-            int height = (int.Parse(txtHeight.Text));
-            int weight = (int.Parse(txtWeight.Text));
-
-            int newID = 1;
-
-            using (Database.con)
+            try
             {
-                Database.openConnection();
-                Database.sql = "SELECT MAX(Clients.ID) AS LastID FROM Clients";
-                Database.cmd.CommandType = CommandType.Text;
-                Database.cmd.CommandText = Database.sql;
+                // Makes a new User, assigns values to be passed into Stored Procedure
+                u.Register(txtUser.Text, txtPassCode.Text, txtFirst.Text, txtLast.Text, (DateTime)BirthDate.SelectedDate, txtEmail.Text);
 
-                Database.dr = Database.cmd.ExecuteReader();
+                using (Database.con)
+                {
+                    Database.openConnection();
 
-                while (Database.dr.Read())
-                    newID = Database.dr.GetInt32(0) + 1;
+                    Database.sql =
+                        "EXEC RegisterNewClient @Forename= '" + u.Forename + "', @Surname= '" + u.LastName +
+                        "', @DateOfBirth= '" + u.DateOfBirth.ToString("yyyy/MM/dd") + "', @EmailAddress= '" + u.EmailAddress +
+                        "', @Username= '" + u.userName + "', @Password= '" + u.Password + "'";
 
-                Database.cmd.CommandText = "insert into Clients (ID, Forename, LastName, DateOfBirth, Height, Weight) values(" +
-                    newID + ", '" + txtClientName.Text + "', '" + txtPassCode.Text + "', '" + BirthDate.SelectedDate + "'," + height + "," + weight + ")";
+                    Database.cmd.CommandType = CommandType.Text;
+                    Database.cmd.CommandText = Database.sql;
 
-                MessageBox.Show("Register Successful", "Congrats", MessageBoxButton.OK, MessageBoxImage.Information);
-                //ContinueForward();
+                    Database.dr = Database.cmd.ExecuteReader();
+                    Database.dr.Close();
+                    Database.closeConnection();
 
-                Database.dr.Close();
+                    ContinueForward();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Could not connect to the SQL Server! :" + ex.Message);
             }
         }
 
-        private void ContinueForward(User user)
+        // Connected, now entering the app via navigation
+        private void ContinueForward()
         {
-            Diary diaryPage = new Diary();
-            this.NavigationService.Navigate(diaryPage, user);
+            Diary diaryPage = new Diary(u);
+            NavigationService.Navigate(diaryPage, u);
         }
+
+        //// Loads User data when Page has finished Loading
+        private void NavigationService_LoadCompleted(object sender, NavigationEventArgs e)
+        {
+            u = (User)e.ExtraData;
+        }
+
 
         #region Text Events
         private void TxtUsername_MouseEnter(object sender, MouseEventArgs e)

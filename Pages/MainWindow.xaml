@@ -11,6 +11,6 @@
                   WindowStartupLocation="CenterScreen"
                   SizeToContent="WidthAndHeight">
 
-    <Frame Source="Diary.xaml"></Frame>
+    <Frame Source="SignIn.xaml"></Frame>
 
 </Window>

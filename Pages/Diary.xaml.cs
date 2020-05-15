@@ -8,48 +8,263 @@ using System.Data.SqlClient;
 using HeartbeatApp.Classes;
 using System;
 using System.Windows.Navigation;
+using System.ComponentModel;
+using System.Xml;
+using System.Windows.Controls.Primitives;
+using System.IO;
 
 namespace HeartbeatApp.Pages
 {
     /// <summary>
     /// Interaction logic for Diary.xaml
     /// </summary>
+    /// 
     public partial class Diary : Page
     {
-        //test variables
-        private string currentDate;
-
-        private int selectedCalories;
-        private int selectedCarbs;
-        private int selectedFat;
-        private int selectedProtein;
-
-        private int startingWeight = 0;
-        private int targetWeight = 0;
-        private int remainingCalories = 0;
+        // Open App with Today's Date
+        mDatePicker mDate = new mDatePicker { Date = DateTime.Today };
 
         // Creates the Current User
-        User u = new User();
+        User u = null;
 
         // Initialize Base Values
-        public Diary()
+        public Diary(User _user)
         {
             InitializeComponent();
-            CalorieCalculation();
+
+            u = _user;
+
+            DiaryDate.DataContext = mDate;
+            DiaryDate.SelectedDate = DateTime.Today;
+
+            GetClientID();
         }
 
-        // Checks if a String is of a Numeric Value, and Can Convert it
-        public static bool isNumeric(string s)
+        // Set and validate the Current User logged in
+        private void SetUser()
         {
-            return int.TryParse(s, out int n);
+            try
+            {
+                using (Database.con)
+                {
+                    Database.openConnection();
+                    Database.sql = "select Forename, LastName, Height, Weight, Gender, CalorieIntake, DateOfBirth from Clients WHERE ID =" + u.ID;
+                    Database.cmd.CommandType = CommandType.Text;
+                    Database.cmd.CommandText = Database.sql;
+
+                    Database.dr = Database.cmd.ExecuteReader();
+
+                    while (Database.dr.Read())
+                    {
+                        u.Forename = Database.dr.GetString(0);
+                        u.LastName = Database.dr.GetString(1);
+                        u.Height = Database.dr.GetInt32(2);
+                        u.Weight = Database.dr.GetInt32(3);
+                        u.Gender = Database.dr.GetInt32(4);
+                        u.CalorieIntake = Database.dr.GetInt32(5);
+                        u.DateOfBirth = Database.dr.GetDateTime(6);
+                    }
+                }
+                Database.closeConnection();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Could not connect to the SQL Server! :" + ex.Message);
+                Database.closeConnection();
+            }
         }
 
+        #region Grid Controls
+        // Totals up all SelectedDate Nutritions, Calories, Carbs, Etc...
         private void CalorieCalculation()
         {
-            StartingWeight.Text = "Starting Weight: " + startingWeight;
-            TargetWeight.Text = "Target Weight: " + targetWeight;
-            RemainingCalories.Text = "Remaining: " + remainingCalories;
+            int cals = 0, carbs = 0, fat = 0, protein = 0;
+
+            try
+            {
+                using (Database.con)
+                {
+                    Database.openConnection();
+                    Database.sql = "exec SumCaloriesByDay @Date='" + mDate.Date.ToString("yyyy-MM-dd") + "', @ClientID= " + u.ID;
+                    Database.cmd.CommandType = CommandType.Text;
+                    Database.cmd.CommandText = Database.sql;
+
+                    Database.dr = Database.cmd.ExecuteReader();
+
+                    while (Database.dr.Read())
+                    {
+                        cals = Database.dr.GetInt32(0);
+                        carbs = Database.dr.GetInt32(1);
+                        protein = Database.dr.GetInt32(2);
+                        fat = Database.dr.GetInt32(3);
+                    }
+                }
+                Database.closeConnection();
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Could not connect to the SQL Server! :" + ex.Message);
+            }
+
+            NutrientBreakdown(cals, carbs, protein, fat);
         }
+
+        // Break down of Calories and Checks
+        private void NutrientBreakdown(int cals, int carbs, int fat, int protein)
+        {
+            currWeight.Text = "Weight: " + u.Weight;
+
+            targetCals.Text = "Target Calories: " +  u.CalorieIntake + " kcals";
+
+            consumeCals.Text = "Remaining: " + (u.CalorieIntake - cals).ToString() + " kcals";
+
+            #region Assigning to XAML
+
+                // Values
+                allCals.Text = cals.ToString();
+                allCarbs.Text = carbs.ToString();
+                allFat.Text = fat.ToString();
+                allProtein.Text = protein.ToString();
+
+                // Daily
+                DailyCals.Text = u.CalorieIntake.ToString();
+                DailyCarbs.Text = (u.CalorieIntake / 0.6f).ToString();
+                DailyFat.Text = (u.CalorieIntake / 0.15f).ToString();
+                DailyProtein.Text = (u.CalorieIntake / 0.25f).ToString();
+
+                // Remaining
+                RemainingCals.Text = consumeCals.Text;
+                RemainingCarbs.Text = (u.CalorieIntake - carbs).ToString();
+                RemainingFat.Text = (u.CalorieIntake - fat).ToString();
+                RemainingProtein.Text = (u.CalorieIntake - protein).ToString();
+
+            #region Styles Table
+            // Calories
+            if (cals > 0)
+            {
+                if (cals > u.CalorieIntake)
+                {
+                    allCals.Background = new SolidColorBrush(Colors.Red);
+                    DailyCals.Background = new SolidColorBrush(Colors.Red);
+                    RemainingCals.Background = new SolidColorBrush(Colors.Red);
+                }
+                else if (cals < (u.CalorieIntake - 200))
+                {
+                    allCals.Background = new SolidColorBrush(Colors.Green);
+                    DailyCals.Background = new SolidColorBrush(Colors.Green);
+                    RemainingCals.Background = new SolidColorBrush(Colors.Green);
+                }
+                else
+                {
+                    allCals.Background = new SolidColorBrush(Colors.LightGray);
+                    DailyCals.Background = new SolidColorBrush(Colors.LightGray);
+                    RemainingCals.Background = new SolidColorBrush(Colors.LightGray);
+                }
+
+                // Carbs
+                if (carbs > (u.CalorieIntake / 0.6f))
+                {
+                    allCals.Background = new SolidColorBrush(Colors.Red);
+                    DailyCals.Background = new SolidColorBrush(Colors.Red);
+                    RemainingCals.Background = new SolidColorBrush(Colors.Red);
+                }
+                else if (carbs < (u.CalorieIntake / 0.6f))
+                {
+                    allCals.Background = new SolidColorBrush(Colors.Green);
+                    DailyCals.Background = new SolidColorBrush(Colors.Green);
+                    RemainingCals.Background = new SolidColorBrush(Colors.Green);
+                }
+                else
+                {
+                    allCals.Background = new SolidColorBrush(Colors.LightGray);
+                    DailyCals.Background = new SolidColorBrush(Colors.LightGray);
+                    RemainingCals.Background = new SolidColorBrush(Colors.LightGray);
+                }
+
+                // Protein
+                if (protein > (u.CalorieIntake / 0.25f))
+                {
+                    allCals.Background = new SolidColorBrush(Colors.Red);
+                    DailyCals.Background = new SolidColorBrush(Colors.Red);
+                    RemainingCals.Background = new SolidColorBrush(Colors.Red);
+                }
+                else if (protein < (u.CalorieIntake / 0.25f))
+                {
+                    allCals.Background = new SolidColorBrush(Colors.Green);
+                    DailyCals.Background = new SolidColorBrush(Colors.Green);
+                    RemainingCals.Background = new SolidColorBrush(Colors.Green);
+                }
+                else
+                {
+                    allCals.Background = new SolidColorBrush(Colors.LightGray);
+                    DailyCals.Background = new SolidColorBrush(Colors.LightGray);
+                    RemainingCals.Background = new SolidColorBrush(Colors.LightGray);
+                }
+
+                // Fat
+                if (fat > (u.CalorieIntake / 0.25f))
+                {
+                    allCals.Background = new SolidColorBrush(Colors.Red);
+                    DailyCals.Background = new SolidColorBrush(Colors.Red);
+                    RemainingCals.Background = new SolidColorBrush(Colors.Red);
+                }
+                else if (fat < (u.CalorieIntake / 0.25f))
+                {
+                    allCals.Background = new SolidColorBrush(Colors.Green);
+                    DailyCals.Background = new SolidColorBrush(Colors.Green);
+                    RemainingCals.Background = new SolidColorBrush(Colors.Green);
+                }
+                else
+                {
+                    allCals.Background = new SolidColorBrush(Colors.LightGray);
+                    DailyCals.Background = new SolidColorBrush(Colors.LightGray);
+                    RemainingCals.Background = new SolidColorBrush(Colors.LightGray);
+                }
+            }
+            #endregion
+
+            #endregion
+        }
+
+        // From ClientAuthenticate, get ID, then Set up the User account
+        private void GetClientID()
+        {
+            try
+            {
+                using (Database.con)
+                {
+                    Database.openConnection();
+                    Database.sql = "exec GetClientIDFromUser @Username = '" + u.userName + "', @Password = '" + u.Password + "'";
+                    Database.cmd.CommandType = CommandType.Text;
+                    Database.cmd.CommandText = Database.sql;
+
+                    Database.dr = Database.cmd.ExecuteReader();
+
+                    while (Database.dr.Read())
+                        u.ID = Database.dr.GetInt32(0);
+                }
+                Database.closeConnection();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Could not connect to the SQL Server! :" + ex.Message);
+            }
+
+            SetUser();
+
+        }
+
+        // Add Exercise to Grid
+        private void AddExercise(object sender, RoutedEventArgs e)
+        {
+            u.SelectedDate = (DateTime)DiaryDate.SelectedDate;
+
+            Training training = new Training(u);
+            NavigationService.Navigate(training, u);
+        }
+
+        #endregion
 
         // All Button Click events
         #region Button Clicks
@@ -67,7 +282,6 @@ namespace HeartbeatApp.Pages
             SideMenuClose.Visibility = Visibility.Collapsed;
         }
 
-
         // Closes the Side Menu
         private void ButtonMenuClose_Click(object sender, RoutedEventArgs e)
         {
@@ -84,166 +298,7 @@ namespace HeartbeatApp.Pages
             }
         }
 
-        // Get the Lsst ID number of a Database Table
-        private int GetLastID(string connectionString)
-        {
-            int lastID = 0;
-
-            using (Database.con)
-            {
-                Database.openConnection();
-                Database.sql = connectionString;
-                Database.cmd.CommandType = CommandType.Text;
-                Database.cmd.CommandText = Database.sql;
-
-                Database.dr = Database.cmd.ExecuteReader();
-
-                while (Database.dr.Read())
-                    lastID = Convert.ToInt32(Database.dr.GetValue(0)) + 1;
-
-                Database.dr.Close();
-                return lastID;
-            }
-        }
-
-        // Updates the Database Table Recipes and ClientMeals, grabs the Page's data
-        private void UpdateDiary(object sender, RoutedEventArgs e)
-        {
-            StackPanel stackPanel = (StackPanel)((Button)sender).Parent;
-            StackPanel breakfast = (StackPanel)stackPanel.Children[0];
-            StackPanel rowsPanel = (StackPanel)breakfast.Children[1];
-
-            int id = GetLastID("SELECT MAX(ID) FROM Recipes");
-
-            List<StackPanel> panels = new List<StackPanel>();
-            List<string> v = new List<string>();
-
-            foreach (StackPanel p in rowsPanel.Children)
-                panels.Add(p);
-
-            if (panels.Count > 0)
-            {
-                for (int i = 0; i < panels.Count; i++)
-                {
-                    for (int j = 0; j < panels[i].Children.Count; j++)
-                    {
-                        if (panels[i].Children[j] is TextBox)
-                        {
-                            List<TextBox> tempValues = new List<TextBox>();
-                            tempValues.Add(panels[i].Children[j] as TextBox);
-
-                            InsertToSql(tempValues);
-                        }
-                    }
-                }
-
-                void InsertToSql(List<TextBox> t)
-                {
-                    for (int i = 0; i < t.Count; i++)
-                    {
-                        v.Add(t[i].Text);
-                    }
-                }
-
-                List<int> nutrients = new List<int>(); ;
-                for (int i = 0; i < v.Count; i++)
-                {
-                    if (isNumeric(v[i]))
-                        nutrients.Add(int.Parse(v[1]));
-                }
-
-                if (nutrients.Count >= 4)
-                {
-                    string insertNewRecipe = "insert into Recipes (ID, RecipeName, Calories, Carbs, Protein, Fat) values(" + id + ", '" + v[0] + "', " + nutrients[0] + ", " + nutrients[1] + ", " + nutrients[2] + ", " + nutrients[3] + ")";
-
-                    using (Database.con)
-                    {
-                        Database.openConnection();
-                        Database.sql = insertNewRecipe;
-                        Database.cmd.CommandType = CommandType.Text;
-                        Database.cmd.CommandText = Database.sql;
-                        Database.dr = Database.cmd.ExecuteReader();
-
-                        MessageBox.Show("Recipe Added", "Congrats", MessageBoxButton.OK, MessageBoxImage.Information);
-                        Database.dr.Close();
-                    }
-                }
-                else
-                    MessageBox.Show("All Fields must be Accurate", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            Database.closeConnection();
-        }
-
-        private void OpenBreakfast(object sender, RoutedEventArgs e)
-        {
-            if (panelBreakfast.Visibility == Visibility.Visible)
-                CloseMenus();
-            else
-            {
-                CloseMenus();
-                panelBreakfast.Visibility = Visibility.Visible;
-            }
-        }
-
-        private void OpenLunch(object sender, RoutedEventArgs e)
-        {
-            if (panelLunch.Visibility == Visibility.Visible)
-                CloseMenus();
-            else
-            {
-                CloseMenus();
-                panelLunch.Visibility = Visibility.Visible;
-            }
-        }
-
-        private void OpenDinner(object sender, RoutedEventArgs e)
-        {
-            if (panelDinner.Visibility == Visibility.Visible)
-                CloseMenus();
-            else
-            {
-                CloseMenus();
-                panelDinner.Visibility = Visibility.Visible;
-            }
-        }
-
-        private void OpenSnacks(object sender, RoutedEventArgs e)
-        {
-            if (panelSnacks.Visibility == Visibility.Visible)
-                CloseMenus();
-            else
-            {
-                CloseMenus();
-                panelSnacks.Visibility = Visibility.Visible;
-            }
-        }
-
-        private void OpenWater(object sender, RoutedEventArgs e)
-        {
-            if (panelWater.Visibility == Visibility.Visible)
-                CloseMenus();
-            else
-            {
-                CloseMenus();
-                panelWater.Visibility = Visibility.Visible;
-            }
-        }
-
-        private void CloseMenus()
-        {
-            List<StackPanel> stackPanels = new List<StackPanel>();
-            stackPanels.Add(panelBreakfast);
-            stackPanels.Add(panelLunch);
-            stackPanels.Add(panelDinner);
-            stackPanels.Add(panelSnacks);
-            stackPanels.Add(panelWater);
-
-            foreach (var p in stackPanels)
-                p.Visibility = Visibility.Collapsed;
-        }
-
         #endregion
-
 
         // Manages Navigation Between all Pages
         #region Page Navigation
@@ -254,205 +309,68 @@ namespace HeartbeatApp.Pages
             u = (User)e.ExtraData;
         }
 
-        //// Go to Pages on CLick
-        private void NavigateHome_Click(object sender, RoutedEventArgs e)
+        // Go to Pages on Click
+        private void NavigateTraining(object sender, RoutedEventArgs e)
         {
-            SignIn signInPage = new SignIn();
-            NavigationService.Navigate(signInPage, u);
+            Training training = new Training(u);
+            NavigationService.Navigate(training, u);
         }
 
-        private void NavigateDiary_Click(object sender, RoutedEventArgs e)
+        private void NavigateMeals(object sender, RoutedEventArgs e)
         {
-            Diary diaryPage = new Diary();
-            NavigationService.Navigate(diaryPage, u);
+            Meals page = new Meals(u);
+            NavigationService.Navigate(page, u);
         }
 
-        #endregion
-
-        // Handles all Events related to the Rows in the Grid/StackPanels related to the User's Meals
-        #region Rows Events
-        private void AddExistingItem(object sender, RoutedEventArgs e)
+        private void NavigateProfile(object sender, RoutedEventArgs e)
         {
-            using (Database.con)
-            {
-                Database.openConnection();
-                Database.sql = "";
-                Database.cmd.CommandType = CommandType.Text;
-                Database.cmd.CommandText = Database.sql;
-
-                Database.dr = Database.cmd.ExecuteReader();
-
-                if (Database.dr.HasRows)
-                {
-                    while (Database.dr.Read())
-                    {
-
-                    }
-                }
-
-                Database.dr.Close();
-            }
-
-
-            DataGrid dataGrid = new DataGrid();
-            dataGrid.Background = new SolidColorBrush(Colors.White);
-            dataGrid.AlternatingRowBackground = new SolidColorBrush(Colors.LightBlue);
-            dataGrid.AlternationCount = 1;
-            dataGrid.AutoGenerateColumns = true;
-        }
-
-        private void GridControls(object sender, RoutedEventArgs e)
-        {
-            StackPanel stackPanel = (StackPanel)((Button)sender).Parent;
-
-            StackPanel rowsPanel = (StackPanel)stackPanel.Children[1];
-            StackPanel buttonsPanel = (StackPanel)stackPanel.Children[2];
-
-            if (rowsPanel.Visibility == Visibility.Collapsed)
-            {
-                rowsPanel.Visibility = Visibility.Visible;
-                buttonsPanel.Visibility = Visibility.Visible;
-
-                if (rowsPanel.Children.Count == 0)
-                    AddRow(rowsPanel);
-            }
-            else if (stackPanel.Visibility == Visibility.Visible)
-            {
-                AddRow(rowsPanel);
-            }
-        }
-
-        private void AddRow(StackPanel stack)
-        {
-            // Main StackPanel containing a row of values
-            StackPanel tempStack = new StackPanel();
-            tempStack.Orientation = Orientation.Horizontal;
-
-            TextBox foodName = new TextBox();
-            foodName.Name = "foodName";
-            foodName.Text = "Name of Meal";
-            foodName.Width = 150;
-            foodName.MouseEnter += MouseEntered;
-            foodName.MouseLeave += MouseLeft;
-            tempStack.Children.Add(foodName);
-
-            TextBox txtCalories = new TextBox();
-            txtCalories.Name = "txtCalories";
-            txtCalories.Text = "Calories";
-            txtCalories.Width = 75;
-            txtCalories.MouseEnter += MouseEntered;
-            txtCalories.MouseLeave += MouseLeft;
-            tempStack.Children.Add(txtCalories);
-
-            TextBox txtCarbs = new TextBox();
-            txtCarbs.Name = "txtCarbs";
-            txtCarbs.Text = "Carbs";
-            txtCarbs.Width = 75;
-            txtCarbs.MouseEnter += MouseEntered;
-            txtCarbs.MouseLeave += MouseLeft;
-            tempStack.Children.Add(txtCarbs);
-
-            TextBox txtProtein = new TextBox();
-            txtProtein.Name = "txtProtein";
-            txtProtein.Text = "Protein";
-            txtProtein.Width = 75;
-            txtProtein.MouseEnter += MouseEntered;
-            txtProtein.MouseLeave += MouseLeft;
-            tempStack.Children.Add(txtProtein);
-
-            TextBox txtFat = new TextBox();
-            txtFat.Name = "txtFat";
-            txtFat.Text = "Fat";
-            txtFat.Width = 75;
-            txtFat.MouseEnter += MouseEntered;
-            txtFat.MouseLeave += MouseLeft;
-            tempStack.Children.Add(txtFat);
-
-            Button btnDelete = new Button();
-            btnDelete.Content = "Delete?";
-            btnDelete.HorizontalAlignment = HorizontalAlignment.Right;
-            btnDelete.Click += DeleteRow;
-            tempStack.Children.Add(btnDelete);
-
-            stack.Children.Add(tempStack);
-        }
-
-        private void DeleteRow(object sender, RoutedEventArgs e)
-        {
-            Button btn = e.Source as Button;
-            StackPanel stackPanel = (StackPanel)btn.Parent;
-            StackPanel main = (StackPanel)stackPanel.Parent;
-            TextBox recipeName = stackPanel.Children[0] as TextBox;
-
-            if (!String.IsNullOrWhiteSpace(recipeName.Text))
-            {
-                using (Database.con)
-                {
-                    Database.openConnection();
-                    Database.sql = "DELETE FROM Recipes WHERE RecipeName like " + "'" + recipeName.Text + "'";
-                    Database.cmd.CommandType = CommandType.Text;
-                    Database.cmd.CommandText = Database.sql;
-
-                    Database.dr = Database.cmd.ExecuteReader();
-
-                    MessageBox.Show("Food Item Removed", "Congrats", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                    Database.dr.Close();
-
-                    Database.closeConnection();
-                }
-            }
-            main.Children.Remove(stackPanel);
-        }
-
-        private void CancelItem(object sender, RoutedEventArgs e)
-        {
-            StackPanel buttonsPanel = (StackPanel)((Button)sender).Parent;
-            StackPanel subPanel = (StackPanel)buttonsPanel.Parent;
-            StackPanel rowsPanel = (StackPanel)subPanel.Children[1];
-
-            buttonsPanel.Visibility = Visibility.Collapsed;
-            rowsPanel.Visibility = Visibility.Collapsed;
+            Profile profile = new Profile(u);
+            NavigationService.Navigate(profile, u);
         }
 
         #endregion
 
-        #region MouseEvents
-        private void MouseEntered(object sender, RoutedEventArgs e)
+        // Diary Date Changed, Updates Grids to SelectedDate
+        private void DiaryDate_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
         {
-            string currText = ((TextBox)sender).Text;
-            switch (currText)
-            {
-                case "Name of Meal": ((TextBox)sender).Text = ""; break;
-                case "Calories": ((TextBox)sender).Text = ""; break;
-                case "Carbs": ((TextBox)sender).Text = ""; break;
-                case "Protein": ((TextBox)sender).Text = ""; break;
-                case "Fat": ((TextBox)sender).Text = ""; break;
-            }
+            mDate.Date = (DateTime)DiaryDate.SelectedDate;
+            CalorieCalculation();
         }
-        private void MouseLeft(object sender, RoutedEventArgs e)
-        {
-            string textName = ((TextBox)sender).Name;
-            switch (textName)
-            {
-                case "foodName":
-                    if (((TextBox)sender).Text == "")
-                        ((TextBox)sender).Text = "Name of Meal"; break;
-                case "txtCalories":
-                    if (((TextBox)sender).Text == "")
-                        ((TextBox)sender).Text = "Calories"; break;
-                case "txtCarbs":
-                    if (((TextBox)sender).Text == "")
-                        ((TextBox)sender).Text = "Carbs"; break;
-                case "txtProtein":
-                    if (((TextBox)sender).Text == "")
-                        ((TextBox)sender).Text = "Protein"; break;
-                case "txtFat":
-                    if (((TextBox)sender).Text == "")
-                        ((TextBox)sender).Text = "Fat"; break;
-            }
-        }
-        #endregion
 
+
+        private void MenuLogOut(object sender, RoutedEventArgs e)
+        {
+            //open or close the menu
+            if (menuLogOut.Visibility == Visibility.Hidden)
+                menuLogOut.Visibility = Visibility.Visible;
+            else
+                menuLogOut.Visibility = Visibility.Hidden;
+        }
+
+        private void LogOutUser(object sender, RoutedEventArgs e)
+        {
+            // click to log out the user
+            u.ClearUser();
+
+            SignIn signIn = new SignIn();
+            NavigationService.Navigate(signIn);
+        }
+
+        private void Page_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                u.ReadUserFile();
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine("The file could not be read:");
+                Console.WriteLine(ex.Message);
+            }
+            finally
+            {
+            u.SaveUserToFile();
+            }
+        }
     }
 }

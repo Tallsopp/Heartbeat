@@ -1,4 +1,4 @@
-﻿<Page x:Class="HeartbeatApp.Pages.Diary"
+﻿<Page x:Class="HeartbeatApp.Pages.Meals"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -6,8 +6,7 @@
         xmlns:local="clr-namespace:HeartbeatApp.Pages"
       xmlns:model="clr-namespace:HeartbeatApp.Classes"
         mc:Ignorable="d"
-        Title="Diary"
-      Loaded="Page_Loaded">
+        Title="Meals">
 
     <Page.Resources>
         <Storyboard x:Key="MenuOpen">
@@ -50,7 +49,7 @@
                     <Button x:Name="SideMenuOpen" Click="MenuOpen" Width="40" Height="40" Style="{StaticResource Menu}"/>
                     <Button x:Name="SideMenuClose" Click="MenuClose" Width="50" Height="50" Style="{StaticResource Menu}" Visibility="Collapsed"/>
 
-                    <TextBlock Text="DIARY"/>
+                    <TextBlock Text="MEALS"/>
 
                     <Button x:Name="LogOutButton" Click="MenuLogOut"  Style="{StaticResource Logout}"/>
 
@@ -73,7 +72,7 @@
                             <ListViewItem>
                                 <StackPanel Orientation="Horizontal">
                                     <!-- DIARY -->
-                                    <Button Style="{StaticResource Diary}"/>
+                                    <Button Style="{StaticResource Diary}" Click="NavigateDiary"/>
                                     <TextBlock Text="Diary"/>
                                 </StackPanel>
                             </ListViewItem>
@@ -81,11 +80,11 @@
                             <ListViewItem>
                                 <StackPanel Orientation="Horizontal">
                                     <!-- MEALS -->
-                                    <Button Style="{StaticResource Meals}" Click="NavigateMeals"/>
+                                    <Button Style="{StaticResource Meals}"/>
                                     <TextBlock Text="Meals"/>
                                 </StackPanel>
                             </ListViewItem>
-                            
+
                             <ListViewItem>
                                 <StackPanel Orientation="Horizontal">
                                     <!-- TRAINING -->
@@ -116,17 +115,46 @@
                                         SelectedDateChanged="DiaryDate_SelectedDateChanged"/>
                         </StackPanel>
 
-                        <!-- Goals Reminders for Calroies and Targets to Reach -->
-                        <StackPanel Style="{StaticResource Goals}">
-                            <TextBlock Name="currWeight"/>
-                            <TextBlock Name="targetCals" />
-                            <TextBlock Name="consumeCals"/>
+                        <ComboBox x:Name="MealSelect" HorizontalAlignment="Left" Width="150" Margin="10" SelectionChanged="SelectMeal">
+                            <ComboBoxItem Content="Breakfast"/>
+                            <ComboBoxItem Content="Lunch"/>
+                            <ComboBoxItem Content="Dinner"/>
+                            <ComboBoxItem Content="Snack"/>
+                        </ComboBox>
+
+                        <!-- Items of Food per Meal -->
+                        <StackPanel Style="{StaticResource MealPlanner}" Margin="10">
+
+                            <!-- Breakfast -->
+                            <StackPanel Name="panelBreakfast" Visibility="Visible">
+
+                                <DataGrid Name="gridBreakfast" Margin="10">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Name" Binding="{Binding Path=Name}"/>
+                                        <DataGridTextColumn Header="Calories" Binding="{Binding Path=Calories}"/>
+                                        <DataGridTextColumn Header="Carbs" Binding="{Binding Path=Carbs}"/>
+                                        <DataGridTextColumn Header="Protein" Binding="{Binding Path=Protein}"/>
+                                        <DataGridTextColumn Header="Fat" Binding="{Binding Path=Fat}"/>
+                                        <DataGridTemplateColumn Header="Delete?">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Name="btnDelete" Content="Delete?" Click="btnRemoveItem" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <Button x:Name="breakfast" Content="Add Food" Click="btnOpenAddItem"/>
+                            </StackPanel>
+
                         </StackPanel>
+
 
                         <!-- Nutrition Breakdown -->
                         <StackPanel HorizontalAlignment="Center" Margin="10">
 
-                            <TextBlock Text="Nutritition Breakdown" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Meal Totals" HorizontalAlignment="Left" />
 
                             <!-- Nutrition Area -->
                             <Grid>
@@ -139,8 +167,6 @@
                                 <!-- Headers-->
                                 <StackPanel Grid.Column="0" Style="{StaticResource TotalHeaders}">
                                     <TextBlock Padding="2" Text="Total:"/>
-                                    <TextBlock Padding="2" Text="Daily Goal:"/>
-                                    <TextBlock Padding="2" Text="Remaining:"/>
                                 </StackPanel>
 
                                 <!-- Values-->
@@ -153,26 +179,6 @@
                                         <TextBlock x:Name="allProtein" Text="0"/>
                                         <TextBlock Text="0"/>
                                         <TextBlock Text="0"/>
-                                    </StackPanel>
-
-                                    <!-- Daily Goals -->
-                                    <StackPanel Style="{StaticResource Totals}">
-                                        <TextBlock x:Name="DailyCals" Text="0"/>
-                                        <TextBlock x:Name="DailyCarbs" Text="0"/>
-                                        <TextBlock x:Name="DailyFat" Text="0"/>
-                                        <TextBlock x:Name="DailyProtein" Text="0"/>
-                                        <TextBlock x:Name="DailySodium" Text="0"/>
-                                        <TextBlock x:Name="DailySugar" Text="0"/>
-                                    </StackPanel>
-
-                                    <!-- Remaining -->
-                                    <StackPanel Style="{StaticResource Totals}">
-                                        <TextBlock x:Name="RemainingCals" Text="0"/>
-                                        <TextBlock x:Name="RemainingCarbs" Text="0"/>
-                                        <TextBlock x:Name="RemainingFat" Text="0"/>
-                                        <TextBlock x:Name="RemainingProtein" Text="0"/>
-                                        <TextBlock x:Name="RemainingSodium" Text="0"/>
-                                        <TextBlock x:Name="RemainingSugar" Text="0"/>
                                     </StackPanel>
 
                                     <!-- Total Headers-->
@@ -213,6 +219,59 @@
                         </StackPanel>
 
                     </StackPanel>
+
+                    <!-- Add Food to Diary Menu -->
+                    <Border Name="menuAddItem" Grid.Column="1" Background="DarkGray" Visibility="Collapsed" HorizontalAlignment="Stretch">
+
+                        <StackPanel Background="White" Margin="50 25 50 25">
+                            <!-- Search Bar -->
+                            <TextBlock Text="Search, type below:"/>
+
+                            <TextBox Text="" x:Name="searchBar" TextChanged="SearchBar_TextChanged" HorizontalAlignment="Left" Foreground="Black" TextAlignment="Left" Margin="10"/>
+
+                            <DataGrid x:Name="gridSearch">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Path=RecipeName}"/>
+                                    <DataGridTextColumn Header="Calories" Binding="{Binding Path=Calories}"/>
+                                    <DataGridTextColumn Header="Carbs" Binding="{Binding Path=Carbs}"/>
+                                    <DataGridTextColumn Header="Protein" Binding="{Binding Path=Protein}"/>
+                                    <DataGridTextColumn Header="Fat" Binding="{Binding Path=Fat}"/>
+                                    <DataGridTemplateColumn>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Name="btnAdd" Content="Add" Click="AddSearchedItem" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- Type in your own Food Item -->
+                            <StackPanel x:Name="menuMakeOwn" Visibility="Hidden" Margin="10" HorizontalAlignment="Stretch">
+                                <TextBlock Text="Type in Item" HorizontalAlignment="Center"/>
+
+                                <TextBlock Text="Name" HorizontalAlignment="Stretch"/>
+                                <TextBox Foreground="Black" Name="boxName" HorizontalAlignment="Stretch"/>
+                                <TextBlock Text="Calories" HorizontalAlignment="Stretch"/>
+                                <TextBox Foreground="Black" Name="boxCalories" HorizontalAlignment="Stretch"/>
+                                <TextBlock Text="Carbs" HorizontalAlignment="Stretch"/>
+                                <TextBox Foreground="Black" x:Name="boxCarbs" HorizontalAlignment="Stretch"/>
+                                <TextBlock Text="Protein" HorizontalAlignment="Stretch"/>
+                                <TextBox Foreground="Black" x:Name="boxProtein" HorizontalAlignment="Stretch"/>
+                                <TextBlock Text="Fat" HorizontalAlignment="Stretch"/>
+                                <TextBox Foreground="Black" x:Name="boxFat" HorizontalAlignment="Stretch"/>
+
+                                <Button Content="Add Food" Click="AddCustomFood"/>
+
+                            </StackPanel>
+
+                            <StackPanel Margin="10 0 10 10" VerticalAlignment="Bottom">
+                                <Button Content="Make Your Own" Click="btnMakeOwnMenu" Margin="0 20 0 20"/>
+                                <Button Content="Close" Click="btnOpenAddItem"/>
+                            </StackPanel>
+
+                        </StackPanel>
+                    </Border>
 
                     <!-- Log Out Menu -->
                     <Border Name="menuLogOut" Grid.Column="1" Background="DarkGray" Visibility="Hidden" HorizontalAlignment="Stretch">

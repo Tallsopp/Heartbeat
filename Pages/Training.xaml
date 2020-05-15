@@ -1,0 +1,213 @@
+﻿<Page x:Class="HeartbeatApp.Pages.Training"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:HeartbeatApp.Pages"
+      xmlns:model="clr-namespace:HeartbeatApp.Classes"
+        mc:Ignorable="d"
+        Title="Training"
+      Width="600">
+
+    <Page.Resources>
+        <Storyboard x:Key="MenuOpen">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(FrameworkElement.Width)" Storyboard.TargetName="GridMenu">
+                <EasingDoubleKeyFrame KeyTime="0" Value="80"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="160"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+        <Storyboard x:Key="MenuClose">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(FrameworkElement.Width)" Storyboard.TargetName="GridMenu">
+                <EasingDoubleKeyFrame KeyTime="0" Value="160"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="80"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <model:Database x:Key="Date_Model"/>
+    </Page.Resources>
+
+    <Page.Triggers>
+        <EventTrigger RoutedEvent="ButtonBase.Click" SourceName="SideMenuOpen">
+            <BeginStoryboard Storyboard="{StaticResource MenuOpen}"/>
+        </EventTrigger>
+        <EventTrigger RoutedEvent="ButtonBase.Click" SourceName="SideMenuClose">
+            <BeginStoryboard Storyboard="{StaticResource MenuClose}"/>
+        </EventTrigger>
+
+    </Page.Triggers>
+
+    <DockPanel>
+        <ScrollViewer>
+            <Grid x:Name="gridApp" Background="White">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <Grid Grid.Row="0" Style="{StaticResource HeaderOrFooter}">
+
+                    <Button x:Name="SideMenuOpen" Click="MenuOpen" Width="40" Height="40" Style="{StaticResource Menu}"/>
+                    <Button x:Name="SideMenuClose" Click="MenuClose" Width="50" Height="50" Style="{StaticResource Menu}" Visibility="Collapsed"/>
+
+                    <TextBlock Text="TRAINING"/>
+
+                    <Button x:Name="LogOutButton" Click="MenuLogOut" Style="{StaticResource Logout}"/>
+
+                </Grid>
+
+                <!-- Main Page -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Side Menu -->
+                    <Grid Name="GridMenu" Width="80" Style="{StaticResource SideMenu}">
+                        <StackPanel HorizontalAlignment="Stretch">
+                            <ListView ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+                                <ListViewItem Height="60">
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- DIARY -->
+                                        <Button Style="{StaticResource Diary}" VerticalAlignment="Center" Margin="10" Click="NavigateDiary_Click"/>
+                                        <TextBlock Text="Diary"/>
+                                    </StackPanel>
+                                </ListViewItem>
+                                
+                                <ListViewItem>
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- MEALS -->
+                                        <Button Style="{StaticResource Meals}" Click="NavigateMeals" Margin="10" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Meals"/>
+                                    </StackPanel>
+                                </ListViewItem>
+
+                                <ListViewItem Height="60">
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- TRAINING -->
+                                        <Button Style="{StaticResource TrainingIcon}" VerticalAlignment="Center" Margin="10"/>
+                                        <TextBlock Text="Training"/>
+                                    </StackPanel>
+                                </ListViewItem>
+
+                                <ListViewItem Height="60">
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- PROFILE -->
+                                        <Button Style="{StaticResource ProfileIcon}" VerticalAlignment="Center" Margin="10" Click="NavigateProfile"/>
+                                        <TextBlock Text="Profile"/>
+                                    </StackPanel>
+                                </ListViewItem>
+
+                            </ListView>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Main Screen -->
+                    <StackPanel Grid.Column="1">
+
+                        <!-- Datepicker / Change Date -->
+                        <StackPanel Name="Calender" Margin=" 0 20 0 20" Orientation="Horizontal" HorizontalAlignment="Center">
+
+                            <!-- Date Selection / Go Left or Right to Change Dates or Datepicker-->
+                            <DatePicker Name="DiaryDate" SelectedDate="{Binding Date, Mode=OneWay}" SelectedDateFormat="Short"
+                                        SelectedDateChanged="DiaryDate_SelectedDateChanged"/>
+                        </StackPanel>
+
+                        
+                        <StackPanel Margin="10" Background="White" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                            <!-- Search Bar -->
+                            <TextBlock Text="Search Workout below:"/>
+                            <TextBox Text="" x:Name="searchBar" HorizontalAlignment="Left" Foreground="Black"
+                                     TextAlignment="Left" Margin="10" TextChanged="searchBar_TextChanged" MaxLength="20"/>
+                            <ComboBox x:Name="exerciseList"
+                                      DisplayMemberPath="Name"
+                                      SelectedValuePath="ID"
+                                      Margin="10"/>
+
+                            <TextBlock Text="Amount of Time Working Out (Minutes):"/>
+                            <TextBox x:Name="timePassed" HorizontalAlignment="Left" Margin="10" Foreground="Black" MaxLength="5"/>
+
+                            <Button Padding="5" Click="AddCurrentSelection" Content="Add Exercise" HorizontalAlignment="Left" FontSize="16" Margin="10"/>
+                            
+                        </StackPanel>
+
+                        <!-- Exercise For the Day -->
+                        <StackPanel>
+                            <TextBlock Text="Your Workout for the Day:"/>
+
+                            <DataGrid Name="gridExercise" Margin="10">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Workout" Binding="{Binding Path=Name}"/>
+                                    <DataGridTextColumn Header="Description" Binding="{Binding Path=Description}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                        </StackPanel>
+
+
+
+                        <!-- Image and Videos of Workouts -->
+                        <StackPanel Visibility="Collapsed">
+                            <TextBlock Text="Workouts For You"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="10">
+
+                                <StackPanel Width="200" Height="150" Margin="0 0 10 0">
+                                    <TextBlock Text="Example"/>
+                                </StackPanel>
+                                <StackPanel Width="200" Height="150" Margin="0 0 10 0">
+                                    <TextBlock Text="Example"/>
+                                </StackPanel>
+
+                            </StackPanel>
+
+                            <TextBlock Text="Videos"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="10">
+
+                                <StackPanel Width="200" Height="150" Margin="0 0 10 0">
+                                    <TextBlock Text="Example"/>
+                                </StackPanel>
+                                <StackPanel Width="200" Height="150" Margin="0 0 10 0">
+                                    <TextBlock Text="Example"/>
+                                </StackPanel>
+
+                            </StackPanel>
+
+                        </StackPanel>
+
+                    </StackPanel>
+
+                    <!-- Log Out Menu -->
+                    <Border Name="menuLogOut" Grid.Column="1" Background="DarkGray" Visibility="Hidden" HorizontalAlignment="Stretch">
+
+                        <StackPanel Background="White" Margin="50 25 50 25" Width="300" Height="150">
+                            <!-- Search Bar -->
+                            <TextBlock Text="Log Out?" HorizontalAlignment="Center" FontSize="26" Margin="10"/>
+
+                            <StackPanel Margin="10 0 10 10" HorizontalAlignment="Center" Orientation="Horizontal">
+                                <Button Click="LogOutUser" Content="Yes" Margin="10" Width="75"/>
+                                <Button Click="MenuLogOut" Content="No" Margin="10" Width="75"/>
+                            </StackPanel>
+
+                        </StackPanel>
+                    </Border>
+
+                </Grid>
+
+                <!-- Footer -->
+                <Grid Style="{StaticResource HeaderOrFooter}" Grid.Row="2">
+                    <TextBlock Text="HEARTBEAT"/>
+                </Grid>
+
+            </Grid>
+        </ScrollViewer>
+    </DockPanel>
+
+</Page>
